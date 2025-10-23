@@ -2,7 +2,7 @@ pipeline {
     agent { label "jenkins-Agent" }
     environment {
         APP_NAME = "register-app-pipeline"
-        IMAGE_TAG = "v1.0.${BUILD_NUMBER}" // 👈 Exemple de tag automatique
+        IMAGE_TAG = "v1.0.${BUILD_NUMBER}"
     }
 
     stages {
@@ -14,16 +14,19 @@ pipeline {
 
         stage("Checkout from SCM") {
             steps {
-                git branch: 'main', credentialsId: 'github', url: 'https://github.com/meryamradouani/registration-app.git'
+                git branch: 'main', credentialsId: 'github-token', url: 'https://github.com/meryamradouani/registration-app.git'
             }
         }
 
         stage("Update the Deployment Tags") {
             steps {
                 sh """
+                   echo "Current deployment file content:"
                    cat regapp-deploy.yml
-                   sed -i 's/${APP_NAME}.*/${APP_NAME}:${IMAGE_TAG}/g' deployment.yaml
-                   catregapp-deploy.yml
+                   echo "Updating image tag to: ${IMAGE_TAG}"
+                   sed -i 's|image: ashfaque9x/regapp|image: ashfaque9x/regapp:${IMAGE_TAG}|g' regapp-deploy.yml
+                   echo "Updated deployment file content:"
+                   cat regapp-deploy.yml
                 """
             }
         }
@@ -36,8 +39,8 @@ pipeline {
                    git add regapp-deploy.yml
                    git commit -m "Updated Deployment Manifest with ${IMAGE_TAG}" || echo "No changes to commit"
                 """
-                withCredentials([gitUsernamePassword(credentialsId: 'github', gitToolName: 'Default')]) {
-                    sh "git push https://github.com/meryamradouani/registration-app.git main"
+                withCredentials([gitUsernamePassword(credentialsId: 'github-token', gitToolName: 'Default')]) {
+                    sh "git push origin main"
                 }
             }
         }

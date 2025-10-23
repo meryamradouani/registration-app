@@ -14,7 +14,9 @@ pipeline {
 
         stage("Checkout from SCM") {
             steps {
-                git branch: 'main', credentialsId: 'github-token', url: 'https://github.com/meryamradouani/registration-app.git'
+                git branch: 'main', 
+                url: 'git@github.com:meryamradouani/registration-app.git',
+                credentialsId: 'ssh-key-id'
             }
         }
 
@@ -33,14 +35,14 @@ pipeline {
 
         stage("Push the changed deployment file to Git") {
             steps {
-                sh """
-                   git config --global user.name "meryamradouani"
-                   git config --global user.email "meryamradouani@gmail.com"
-                   git add regapp-deploy.yml
-                   git commit -m "Updated Deployment Manifest with ${IMAGE_TAG}" || echo "No changes to commit"
-                """
-                withCredentials([gitUsernamePassword(credentialsId: 'github-token', gitToolName: 'Default')]) {
-                    sh "git push origin main"
+                sshagent(['ssh-key-id']) {
+                    sh """
+                       git config --global user.name "meryamradouani"
+                       git config --global user.email "meryamradouani@gmail.com"
+                       git add regapp-deploy.yml
+                       git commit -m "Updated Deployment Manifest with ${IMAGE_TAG}"
+                       git push origin main
+                    """
                 }
             }
         }
